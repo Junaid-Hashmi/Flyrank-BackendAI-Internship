@@ -11,6 +11,10 @@ class Task(BaseModel):
 class TaskCreate(BaseModel):
     title: str
 
+class TaskUpdate(BaseModel):
+    title: str
+    done: bool
+
 tasks = [
     Task(id=1, title="Task 1", done=False),
     Task(id=2, title="Task 2", done=True),
@@ -44,3 +48,23 @@ async def create_task(task: TaskCreate):
     new_task = Task(id=new_id, title=task.title)
     tasks.append(new_task)
     return new_task
+
+@app.put("/tasks/{id}")
+async def update_task(id: int, task: TaskUpdate):
+    existing_task = next((task for task in tasks if task.id == id), None)
+    if existing_task is None:
+        raise HTTPException(status_code=404, detail={ "error": f"Task {id} not found" })
+    if not task.title:
+        raise HTTPException(status_code=400, detail={ "error": "Task title is required" })
+    existing_task.title = task.title
+    existing_task.done = task.done
+    return existing_task
+
+@app.delete("/tasks/{id}")
+async def delete_task(id: int):
+    existing_task = next((task for task in tasks if task.id == id), None)
+    if existing_task is None:
+        raise HTTPException(status_code=404, detail={ "error": f"Task {id} not found" })
+    tasks.remove(existing_task)
+    return {"message": f"Task {id} deleted successfully"}
+
