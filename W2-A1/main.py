@@ -6,7 +6,10 @@ app = FastAPI()
 class Task(BaseModel):
     id: int
     title: str
-    done: bool
+    done: bool = False
+
+class TaskCreate(BaseModel):
+    title: str
 
 tasks = [
     Task(id=1, title="Task 1", done=False),
@@ -32,3 +35,12 @@ async def get_task(id: int):
     if task is None:
         raise HTTPException(status_code=404, detail={ "error": f"Task {id} not found" })
     return task
+
+@app.post("/tasks")
+async def create_task(task: TaskCreate):
+    if not task.title:
+        raise HTTPException(status_code=400, detail={ "error": "Task title is required" })
+    new_id = max(task.id for task in tasks) + 1
+    new_task = Task(id=new_id, title=task.title)
+    tasks.append(new_task)
+    return new_task
